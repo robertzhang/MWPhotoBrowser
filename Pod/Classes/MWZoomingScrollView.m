@@ -398,11 +398,29 @@
 		[self setZoomScale:self.minimumZoomScale animated:YES];
 		
 	} else {
+		// 缩放比例根据图片与屏幕宽高比例进行缩放，要求至少一个方向上填满屏幕 ， 修改 by robertzhang
+		CGFloat zoomScale = self.minimumZoomScale;
+    if (_photoImageView && _photoBrowser.zoomPhotosToFill) {
+      // Zoom image to fill if the aspect ratios are fairly similar
+      CGSize boundsSize = self.bounds.size;
+      CGSize imageSize = _photoImageView.image.size;
+      CGFloat boundsAR = boundsSize.width / boundsSize.height;
+      CGFloat imageAR = imageSize.width / imageSize.height;
+      CGFloat xScale = boundsSize.width / imageSize.width;    // the scale needed to perfectly fit the image width-wise
+      CGFloat yScale = boundsSize.height / imageSize.height;  // the scale needed to perfectly fit the image height-wise
+      if (ABS(boundsAR - imageAR) >= 0.1) {
+        zoomScale = MAX(xScale, yScale);
+        // Ensure we don't zoom in or out too far, just in case
+        zoomScale = MIN(MAX(self.minimumZoomScale, zoomScale), self.maximumZoomScale);
+        
+      } else {
+        zoomScale = 1;
+      }
+    }
 		
 		// Zoom in to twice the size
-        CGFloat newZoomScale = ((self.maximumZoomScale + self.minimumZoomScale) / 2);
-        CGFloat xsize = self.bounds.size.width / newZoomScale;
-        CGFloat ysize = self.bounds.size.height / newZoomScale;
+        CGFloat xsize = self.bounds.size.width / zoomScale;
+        CGFloat ysize = self.bounds.size.height / zoomScale;
         [self zoomToRect:CGRectMake(touchPoint.x - xsize/2, touchPoint.y - ysize/2, xsize, ysize) animated:YES];
 
 	}
